@@ -1,15 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"nhooyr.io/websocket"
+	"nhooyr.io/websocket/wsjson"
 )
 
 func main() {
@@ -42,6 +46,7 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Get("/", index)
 		r.Get("/healthz", healthz)
+		r.Get("/ws", ws)
 	})
 
 	log.Fatal(http.ListenAndServe(listenAddr, r))
@@ -57,4 +62,34 @@ func healthz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	io.WriteString(w, `{"alive": true}`)
+}
+
+func ws(w http.ResponseWriter, r *http.Request) {
+	// Create ws connexion
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+
+	defer c.Close(websocket.StatusInternalError, "the sky is falling")
+
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*30)
+	defer cancel()
+
+	var v interface{}
+	err = wsjson.Read(ctx, c, &v)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+
+	log.Printf("received: %v", v)
+	err = wsjson.Write(ctx, c, v)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+
+	c.Close(websocket.StatusNormalClosure, "")
 }

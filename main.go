@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -11,6 +13,18 @@ import (
 )
 
 func main() {
+
+	// Get cli args
+	args := os.Args[1:]
+	port := "8080"
+
+	if len(args) > 0 {
+		if port != "" {
+			port = args[0]
+		}
+	}
+
+	listenAddr := fmt.Sprintf(":%s", port)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -30,7 +44,7 @@ func main() {
 		r.Get("/healthz", healthz)
 	})
 
-	log.Fatal(http.ListenAndServe(":3080", r))
+	log.Fatal(http.ListenAndServe(listenAddr, r))
 }
 
 func index(w http.ResponseWriter, r *http.Request) {

@@ -55,7 +55,7 @@ func main() {
 func index(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
-	io.WriteString(w, `{"msg": "coucou kiki :) !!"}`)
+	io.WriteString(w, `{"msg": "coucou javjav :) !!"}`)
 }
 
 func healthz(w http.ResponseWriter, r *http.Request) {
